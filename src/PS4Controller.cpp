@@ -41,7 +41,6 @@ bool PS4Controller::begin() {
   return true;
 }
 
-#define ESP_BD_ADDR_STR         "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx"
 bool PS4Controller::begin(const char* mac) {
   esp_bd_addr_t addr;
     
@@ -77,14 +76,19 @@ void PS4Controller::setFlashRate(uint8_t onTime, uint8_t offTime) {
 
 void PS4Controller::sendToController() { ps4SetOutput(output); }
 
-void PS4Controller::attach(callback_t callback) { _callback_event = callback; }
+void PS4Controller::attach(callback_t callback, void *callbackobject) {
+   _callback_event = callback; 
+   _callbackobject = callbackobject;
+   }
 
-void PS4Controller::attachOnConnect(callback_t callback) {
+void PS4Controller::attachOnConnect(callback_t callback, void *callbackobject) {
   _callback_connect = callback;
+  _callbackobject = callbackobject;
 }
 
-void PS4Controller::attachOnDisconnect(callback_t callback) {
+void PS4Controller::attachOnDisconnect(callback_t callback, void *callbackobject) {
   _callback_disconnect = callback;
+  _callbackobject = callbackobject;
 }
 
 void PS4Controller::_event_callback(
@@ -95,7 +99,7 @@ void PS4Controller::_event_callback(
   memcpy(&This->event, &event, sizeof(ps4_event_t));
 
   if (This->_callback_event) {
-    This->_callback_event();
+    This->_callback_event(This->_callbackobject);
   }
 }
 
@@ -107,12 +111,12 @@ void PS4Controller::_connection_callback(void* object, uint8_t isConnected) {
                  // so this delay can be removed
 
     if (This->_callback_connect) {
-      This->_callback_connect();
+      This->_callback_connect(This->_callbackobject);
     }
   }
   else {
     if (This->_callback_disconnect) {
-      This->_callback_disconnect();
+      This->_callback_disconnect(This->_callbackobject);
     }
   }
 }
